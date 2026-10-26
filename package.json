@@ -1,0 +1,14 @@
+{
+  "name": "reestr-processov",
+  "version": "0.9.0",
+  "description": "Реестр процессов органа власти: факты с источниками, отбор по каскаду, паспорта, анкеты, гипотезы, короткий список, обзоры эффекта. Без внешних пакетов.",
+  "private": true,
+  "license": "MIT",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "demo": "node reestr.js demo",
+    "start": "node reestr.js serve",
+    "test": "node reestr.js test"
+  },
+  "repository": { "type": "git", "url": "" }
+}

@@ -1,0 +1,8 @@
+# данные ведомства, выгрузки и ключи — не в репозитории
+data/
+export/
+import/
+tests/golden/
+node_modules/
+*.bak*
+~$*
