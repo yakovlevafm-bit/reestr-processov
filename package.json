@@ -10,5 +10,5 @@
     "start": "node reestr.js serve",
     "test": "node reestr.js test"
   },
-  "repository": { "type": "git", "url": "" }
+  "repository": { "type": "git", "url": "https://github.com/yakovlevafm-bit/reestr-processov.git" }
 }
