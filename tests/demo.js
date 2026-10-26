@@ -21,7 +21,7 @@ r = run('storage'); check(/профиль: demo-kultura/.test(r.stdout), 'вкл
 r = run('stats'); check(r.status === 0, 'сводка (stats)');
 r = run('export'); check(r.status === 0 && fs.readdirSync(EXP).some(f => /^Реестр процессов ДКТ — оценка/.test(f)), 'выгрузка Excel с названием ведомства');
 r = run('anketa2'); const an = path.join(EXP, 'анкеты2'); check(r.status === 0 && fs.existsSync(an) && fs.readdirSync(an).filter(f => /^Анкета — /.test(f)).length >= 5, 'простые анкеты по подразделениям демо-ведомства');
-check(!fs.existsSync(path.join(ROOT, 'export', 'анкеты2', 'Анкета — Отдел туризма.xlsx')), 'выгрузки не попали в папку МСХ');
+check(!fs.existsSync(path.join(ROOT, 'export', 'анкеты2', 'Анкета — Отдел туризма.xlsx')), 'выгрузки не попали в общую папку export');
 r = run('opros'); const op = path.join(EXP, 'опросник'); check(r.status === 0 && fs.existsSync(op) && fs.readdirSync(op).filter(f => /^Опросник — /.test(f)).length >= 4, 'опросники владельцев по подразделениям (без дублей)');
 
 // 3. расчёты в том же процессе (профиль и данные — демо)

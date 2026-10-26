@@ -74,23 +74,23 @@ if (cmd === 'demo'){
   console.log(`Сумма как записано: ${Math.round(r.rawTotal).toLocaleString('ru')} ч/год; с поправкой единиц: ${Math.round(r.fixedTotal).toLocaleString('ru')} ч/год`);
   console.log(L.exportXlsx(r));
 } else if (cmd === 'check-numbers'){
-  // числа в гипотезах и резюме «Моста», которых нет в строке реестра и фактах → пометка в карточке
+  // числа в гипотезах и резюме «ИИ-шлюза», которых нет в строке реестра и фактах → пометка в карточке
   const { unsupportedNumbers } = require('./lib/evidence.js');
   let flagged = 0, total = 0;
   for (const x of assessAll()){
     const src = [x.p.name, x.p.input, x.p.output, x.p.hoursRaw, x.p.perYearRaw, x.p.place, ...x.facts.map(f => f.value + ' ' + (f.unit || ''))].join(' \n ');
     const found = [];
-    for (const [k, h] of (x.card.hyps || []).entries()) if (h.source === 'Мост') for (const n of unsupportedNumbers(h.text + ' ' + (h.effect || '') + ' ' + (h.mvp || ''), src)) found.push({ where: 'гипотеза ' + (k + 1), n: n.s, ctx: n.ctx });
+    for (const [k, h] of (x.card.hyps || []).entries()) if (/^(Мост|ИИ-шлюз)$/.test(h.source || '')) for (const n of unsupportedNumbers(h.text + ' ' + (h.effect || '') + ' ' + (h.mvp || ''), src)) found.push({ where: 'гипотеза ' + (k + 1), n: n.s, ctx: n.ctx });
     if (x.card.ai && x.card.ai.summary) for (const n of unsupportedNumbers(x.card.ai.summary, src)) found.push({ where: 'резюме', n: n.s, ctx: n.ctx });
     if (x.card.ai) total++;
     if (found.length){ flagged++; store.saveCard(x.p.id, { numCheck: { at: store.now(), unsupported: found } }, 'проверка чисел'); }
     else if (x.card.numCheck) store.saveCard(x.p.id, { numCheck: { at: store.now(), unsupported: [] } }, 'проверка чисел');
   }
-  console.log(`Карточек с ответом «Моста»: ${total}; с числами, которых нет в реестре: ${flagged}`);
+  console.log(`Карточек с ответом «ИИ-шлюза»: ${total}; с числами, которых нет в реестре: ${flagged}`);
 } else if (cmd === 'facts-ai'){
-  // node reestr.js facts-ai <id>|--pilot|--all [--force]  — «Мост» извлекает факты с цитатами; число проверяется по цитате; статус «предложение ИИ»
+  // node reestr.js facts-ai <id>|--pilot|--all [--force]  — «ИИ-шлюз» извлекает факты с цитатами; число проверяется по цитате; статус «предложение ИИ»
   const bridge = require('./lib/bridge.js');
-  if (!bridge.available()){ console.log('Нет ключа «Моста»: setx BRIDGE_API_KEY <ключ>'); process.exit(1); }
+  if (!bridge.available()){ console.log('Нет ключа «ИИ-шлюза»: setx BRIDGE_API_KEY <ключ>'); process.exit(1); }
   const force = process.argv.includes('--force');
   let items = pickItems(assessAll(), arg);
   if (!force) items = items.filter(x => !(x.card.aiFacts && x.card.aiFacts.at));
@@ -102,23 +102,23 @@ if (cmd === 'demo'){
         const facts = store.facts(); const have = new Set(facts.filter(f => f.pid === it.p.id && f.status === 'ai').map(f => f.name + '|' + f.value));
         for (const f of r.facts){
           if (have.has(f.name + '|' + f.value)) continue;
-          store.addFact({ pid: it.p.id, name: f.name, value: f.value, unit: f.unit, period: f.period || '2025', source: 'строка реестра, извлечено «Мостом» ' + r.at, role: 'ИИ', status: 'ai', by: '«Мост»', quote: f.quote, check: f.check, basis: f.note });
+          store.addFact({ pid: it.p.id, name: f.name, value: f.value, unit: f.unit, period: f.period || '2025', source: 'строка реестра, извлечено «ИИ-шлюзом» ' + r.at, role: 'ИИ', status: 'ai', by: '«ИИ-шлюз»', quote: f.quote, check: f.check, basis: f.note });
           nf++; if (!f.check.ok) bad++;
         }
-        store.saveCard(it.p.id, { aiFacts: { at: r.at, n: r.facts.length, unsupported: r.facts.filter(f => !f.check.ok).length, usage: r.usage } }, '«Мост»: факты');
+        store.saveCard(it.p.id, { aiFacts: { at: r.at, n: r.facts.length, unsupported: r.facts.filter(f => !f.check.ok).length, usage: r.usage } }, '«ИИ-шлюз»: факты');
         ok++; console.log(`${it.p.id.padEnd(9)} фактов ${r.facts.length}, не по цитате ${r.facts.filter(f => !f.check.ok).length}, ${(r.ms / 1000).toFixed(1)} с — ${it.p.name.slice(0, 60)}`);
       } catch (e) { console.log(`${it.p.id.padEnd(9)} ОШИБКА: ${e.message}`); if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|таймаут/.test(e.message)) { console.log('Сеть: node reestr.js bridge-probe'); break; } }
     }
     console.log(`Готово: ${ok} из ${items.length}; фактов добавлено ${nf}, из них число не подтверждено цитатой: ${bad}`);
   })();
 } else if (cmd === 'bridge-key'){
-  // node reestr.js bridge-key [ключ]  — спрятать ключ «Моста» в data/bridge.key под DPAPI и убрать его из реестра Windows
+  // node reestr.js bridge-key [ключ]  — спрятать ключ «ИИ-шлюза» в data/bridge.key под DPAPI и убрать его из реестра Windows
   const bridge = require('./lib/bridge.js');
   if (arg === '--where'){ console.log('Источник ключа:', bridge.keySource()); }
   else { try { const r = bridge.storeKey(arg); console.log('Ключ сохранён:', r.file, '(расшифровать может только учётная запись', process.env.USERNAME + ' на этом компьютере)'); console.log(r.removedFromRegistry ? 'Из HKCU\\Environment ключ удалён.' : 'В HKCU\\Environment ключа не было.'); if (r.envStillSet) console.log('ВНИМАНИЕ: в текущей сессии ещё задана переменная BRIDGE_API_KEY — закройте окно терминала.'); console.log('Проверка:', bridge.available() ? 'ключ читается' : 'ключ НЕ читается'); } catch (e) { console.log('Ошибка:', e.message); process.exit(1); } }
 } else if (cmd === 'bridge-probe'){
-  // какой исходящий адрес доходит до «Моста» (обход VPN); рабочий сохраняется в data/config.json
-  require('./lib/bridge.js').probe().then(r => { for (const x of r.results) console.log((x.ok ? 'OK  ' : 'нет ') + (x.adapter + ' ' + x.address).padEnd(50) + (x.ok ? x.status + ' за ' + x.ms + ' мс' : x.error)); console.log(r.best ? (r.best.address ? 'Сохранён исходящий адрес ' + r.best.address + ' (' + r.best.adapter + ')' : 'Прямое подключение работает, привязка адреса не нужна') : 'Ни один адрес не доходит до «Моста»: проверьте сеть и VPN'); });
+  // какой исходящий адрес доходит до «ИИ-шлюза» (обход VPN); рабочий сохраняется в data/config.json
+  require('./lib/bridge.js').probe().then(r => { for (const x of r.results) console.log((x.ok ? 'OK  ' : 'нет ') + (x.adapter + ' ' + x.address).padEnd(50) + (x.ok ? x.status + ' за ' + x.ms + ' мс' : x.error)); console.log(r.best ? (r.best.address ? 'Сохранён исходящий адрес ' + r.best.address + ' (' + r.best.adapter + ')' : 'Прямое подключение работает, привязка адреса не нужна') : 'Ни один адрес не доходит до «ИИ-шлюза»: проверьте сеть и VPN'); });
 } else if (cmd === 'seed'){
   // начальная загрузка, своя у каждого ведомства — profiles/<id>/seed.js
   const P = require('./lib/profile.js').load(); const f = path.join(P.dir, 'seed.js');
@@ -158,9 +158,9 @@ if (cmd === 'demo'){
   ]));
   console.log(out);
 } else if (cmd === 'ai'){
-  // node reestr.js ai МСХ-188 | --pilot | --all [--force]   — гипотезы через «Мост» (карточки без ai или все при --force)
+  // node reestr.js ai <id> | --pilot | --all [--force]   — гипотезы через «ИИ-шлюз» (карточки без ai или все при --force)
   const bridge = require('./lib/bridge.js');
-  if (!bridge.available()){ console.log('Нет ключа «Моста»: setx BRIDGE_API_KEY <ключ>'); process.exit(1); }
+  if (!bridge.available()){ console.log('Нет ключа «ИИ-шлюза»: setx BRIDGE_API_KEY <ключ>'); process.exit(1); }
   const force = process.argv.includes('--force');
   let items = assessAll();
   if (arg === '--pilot') items = items.filter(x => x.card.pilot); else if (arg !== '--all') items = items.filter(x => x.p.id === arg);
@@ -173,7 +173,7 @@ if (cmd === 'demo'){
         const cur = it.card.hyps || it.rule.hyps.map(h => ({ text: h[0], effect: h[1], status: 'proposed', source: 'правила' }));
         const have = new Set(cur.map(h => h.text.toLowerCase().slice(0, 60)));
         const merged = [...cur, ...r.hyps.filter(h => !have.has(h.text.toLowerCase().slice(0, 60)))];
-        store.saveCard(it.p.id, { hyps: merged, ai: { at: r.at, model: r.model, ms: r.ms, usage: r.usage, questions: r.questions, feasibility: r.feasibility, summary: r.summary } }, '«Мост»');
+        store.saveCard(it.p.id, { hyps: merged, ai: { at: r.at, model: r.model, ms: r.ms, usage: r.usage, questions: r.questions, feasibility: r.feasibility, summary: r.summary } }, '«ИИ-шлюз»');
         tokens += r.usage ? r.usage.total_tokens || 0 : 0; ok++;
         console.log(`${it.p.id.padEnd(9)} +${merged.length - cur.length} гипотез, ${r.questions.length} вопросов, ${(r.ms / 1000).toFixed(1)} с — ${it.p.name.slice(0, 60)}`);
       } catch (e) { console.log(`${it.p.id.padEnd(9)} ОШИБКА: ${e.message}`); }
@@ -181,19 +181,19 @@ if (cmd === 'demo'){
     console.log(`Готово: ${ok} из ${items.length}, токенов ${tokens.toLocaleString('ru')}`);
   })();
 } else if (cmd === 'v2-ai'){
-  // node reestr.js v2-ai МСХ-188 | --pilot | --all [--force]  — предложения оценок v2 через «Мост» (card.v2ai); в расчёт — только после подтверждения в карточке
+  // node reestr.js v2-ai <id> | --pilot | --all [--force]  — предложения оценок v2 через «ИИ-шлюз» (card.v2ai); в расчёт — только после подтверждения в карточке
   const bridge = require('./lib/bridge.js');
-  if (!bridge.available()){ console.log('Нет ключа «Моста»: setx BRIDGE_API_KEY <ключ>'); process.exit(1); }
+  if (!bridge.available()){ console.log('Нет ключа «ИИ-шлюза»: setx BRIDGE_API_KEY <ключ>'); process.exit(1); }
   const force = process.argv.includes('--force');
   let items = pickItems(assessAll(), arg);
   if (!force) items = items.filter(x => !(x.card.v2ai && x.card.v2ai.at));
   (async () => {
     let ok = 0, tokens = 0, ungrounded = 0, fails = 0, stop = false;
-    const queue = [...items], CONC = +(process.env.V2AI_CONC || 1); // «Мост» допускает 1 одновременный запрос на организацию; рассуждения модели — low: ~20 с на процесс вместо ~100
+    const queue = [...items], CONC = +(process.env.V2AI_CONC || 1); // «ИИ-шлюз» допускает 1 одновременный запрос на организацию; рассуждения модели — low: ~20 с на процесс вместо ~100
     const worker = async () => { while (queue.length && !stop){ const it = queue.shift();
       try {
         let r; for (let t = 1; ; t++){ try { r = await bridge.proposeV2(it.p, it.facts, it.rule, it.card, { extra: { reasoning_effort: 'low' } }); break; } catch (e) { if (!/ 429/.test(e.message) || t >= 6) throw e; await new Promise(res => setTimeout(res, 3000 * t)); } } // 429 — лимит одновременных запросов: подождать и повторить
-        store.saveCard(it.p.id, { v2ai: r }, '«Мост»: оценки v2');
+        store.saveCard(it.p.id, { v2ai: r }, '«ИИ-шлюз»: оценки v2');
         const n = Object.keys(r.items).length, ug = Object.values(r.items).filter(x => x.grounded === false).length; ungrounded += ug;
         tokens += r.usage ? r.usage.total_tokens || 0 : 0; ok++; fails = 0;
         console.log(`${it.p.id.padEnd(9)} критериев ${n}, Р ${r.size ? r.size.score : '—'}, светофор ${r.light ? r.light.value : '—'}${ug ? ', цитата не найдена: ' + ug : ''}, ${(r.ms / 1000).toFixed(1)} с — ${it.p.name.slice(0, 60)}`);
